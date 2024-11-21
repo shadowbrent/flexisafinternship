@@ -1,8 +1,8 @@
-import cv2
-import numpy as np
 import torch
 import torch.nn as nn
+import numpy as np
 import matplotlib.pyplot as plt
+import pygame
 
 # Step 1: Define the Generator Model for DCGAN
 class Generator(nn.Module):
@@ -25,7 +25,7 @@ class Generator(nn.Module):
     def forward(self, input):
         return self.main(input)
 
-# Step 2: Initialize Generator and Random Noise
+# Step 2: Initialize Generator and Helper Function
 generator = Generator()
 generator.eval()  # Set generator to evaluation mode
 
@@ -37,17 +37,49 @@ def generate_art(generator, noise_dim=100):
     # Scale the output to the 0-255 range for display
     return (generated_image.squeeze().transpose(1, 2, 0) * 255).astype(np.uint8)
 
-# Step 3: Generate and Display Abstract Art
-if __name__ == "__main__":
-    # Generate an abstract art image
-    art_image = generate_art(generator)
+# Step 3: Dynamic Visual Performances with Pygame
+def dynamic_visual_performance(generator):
+    """Display and regenerate dynamic visuals interactively."""
+    pygame.init()
+    screen_width, screen_height = 800, 800
+    screen = pygame.display.set_mode((screen_width, screen_height))
+    pygame.display.set_caption("Dynamic Visual Performances")
+    clock = pygame.time.Clock()
 
-    # Display the generated art using Matplotlib
+    # Generate the first abstract art image
+    art_image = generate_art(generator)
+    art_surface = pygame.surfarray.make_surface(art_image)
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                # Regenerate art when spacebar is pressed
+                if event.key == pygame.K_SPACE:
+                    art_image = generate_art(generator)
+                    art_surface = pygame.surfarray.make_surface(art_image)
+
+        # Display the generated art
+        screen.blit(art_surface, (0, 0))
+        pygame.display.flip()
+        clock.tick(30)  # Limit to 30 frames per second
+
+    pygame.quit()
+
+# Step 4: Save and Display a Static Image
+if __name__ == "__main__":
+    # Generate and display a static art image
+    static_art = generate_art(generator)
     plt.figure()
     plt.title("Generated Abstract Art")
     plt.axis("off")
-    plt.imshow(art_image)
+    plt.imshow(static_art)
     plt.show()
 
-    # Save the generated image to file
-    plt.imsave("generated_abstract_art.png", art_image)
+    # Save the static art image
+    plt.imsave("generated_abstract_art.png", static_art)
+
+    # Launch dynamic visual performances
+    dynamic_visual_performance(generator)
